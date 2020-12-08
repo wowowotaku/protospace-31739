@@ -1,9 +1,10 @@
 class PrototypesController < ApplicationController
-  before_action :authenticate_user!, expect: [:index, :show, :new, :edit, :destroy] 
-  before_action :reject_edit, only: :edit
+  before_action :find_prototype, only: [:show, :edit, :destroy]
+  before_action :authenticate_user!, only: :show 
+  before_action :reject_edit, only: [:edit, :update, :destroy]
 
   def index
-    @prototypes = Prototype.all
+    @prototypes = Prototype.includes(:user)
   end
 
   def new
@@ -20,7 +21,6 @@ class PrototypesController < ApplicationController
   end
 
   def show
-    @prototype = Prototype.find(params[:id])
     @comment = Comment.new
     @comments = Comment.all
   end
@@ -37,7 +37,6 @@ class PrototypesController < ApplicationController
   end
   
   def destroy
-    @prototype = Prototype.find(params[:id])
     if @prototype.destroy
       redirect_to root_path
     end
@@ -49,8 +48,11 @@ class PrototypesController < ApplicationController
     params.require(:prototype).permit(:title, :catch_copy, :concept, :image).merge(user_id: current_user.id)
   end
 
-  def reject_edit
+  def find_prototype
     @prototype = Prototype.find(params[:id])
+  end
+
+  def reject_edit
     unless current_user == @prototype.user
       redirect_to root_path
     end
